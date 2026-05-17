@@ -1,0 +1,265 @@
+<!-- Main -->
+<div class="main">
+  <!-- === Sticky header (title + tabs + back) === -->
+  <div class="sticky-header">
+    <div class="top-bar">
+      <button type="button" class="hamburger" aria-label="Open menu" (click)="layout.toggleSidebar()">≡</button>
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title--brandlike">Tax Estimator</h1>
+
+      <div class="header-actions" role="tablist" aria-label="Tax Estimator Tabs">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab==='form'"
+          role="tab"
+          aria-selected="{{activeTab==='form'}}"
+          (click)="switchTab('form')">
+          Tax Form
+        </button>
+
+        <button
+          class="tab-btn"
+          [class.active]="activeTab==='summary'"
+          role="tab"
+          aria-selected="{{activeTab==='summary'}}"
+          (click)="switchTab('summary')">
+          Summary
+        </button>
+
+        <!-- <a class="btn-back" [routerLink]="['/dashboard']" style="text-align: center;">Back to Dashboard</a> -->
+      </div>
+    </div>
+  </div>
+  <!-- === /Sticky header === -->
+
+  <!-- Content (full-width under header) -->
+  <section class="form-section">
+    <!-- Tax Form -->
+    <div class="form-card" *ngIf="activeTab==='form'">
+      <div class="form-card-header">
+        <h2 class="form-card-title">Indian Tax Calculator</h2>
+        <button type="button" class="icon-btn" aria-label="Close tax estimator" (click)="onClose()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l12 12M18 6l-12 12" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="calc()">
+        <!-- Country / State -->
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label>Country/Region</label>
+            <div class="select-wrap">
+              <select class="input" formControlName="country">
+                <option *ngFor="let c of countries" [value]="c">{{ c }}</option>
+              </select>
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>State/Province</label>
+            <div class="select-wrap">
+              <select class="input" formControlName="state">
+                <option *ngFor="let s of statesByCountry[form.value.country]">{{ s }}</option>
+              </select>
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filing / Quarter -->
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label>Filing Status</label>
+            <div class="select-wrap">
+              <select class="input" formControlName="status">
+                <option *ngFor="let s of filingStatuses" [value]="s">{{ s }}</option>
+              </select>
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Quarter</label>
+            <div class="select-wrap">
+              <select class="input" formControlName="quarter">
+                <option *ngFor="let q of quarters" [value]="q.id">{{ q.label }}</option>
+              </select>
+              <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Income -->
+        <div class="grid grid-1">
+          <div class="form-group">
+            <label>Gross Income for Quarter</label>
+            <div class="currency-wrap">
+              <span class="currency-prefix">₹</span>
+              <input
+                class="input pl-currency"
+                formControlName="grossIncome"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                inputmode="decimal"
+                (keydown)="blockInvalidNumberKeys($event)"
+                (input)="onNumberInput('grossIncome', $event)"
+                (wheel)="$event.target.blur()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Deductions -->
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label>Business Expenses</label>
+            <div class="currency-wrap">
+              <span class="currency-prefix">₹</span>
+              <input
+                class="input pl-currency"
+                formControlName="businessExpenses"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                inputmode="decimal"
+                (keydown)="blockInvalidNumberKeys($event)"
+                (input)="onNumberInput('businessExpenses', $event)"
+                (wheel)="$event.target.blur()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Retirement Contributions</label>
+            <div class="currency-wrap">
+              <span class="currency-prefix">₹</span>
+              <input
+                class="input pl-currency"
+                formControlName="retirement"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                inputmode="decimal"
+                (keydown)="blockInvalidNumberKeys($event)"
+                (input)="onNumberInput('retirement', $event)"
+                (wheel)="$event.target.blur()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label>Health Insurance Premiums</label>
+            <div class="currency-wrap">
+              <span class="currency-prefix">₹</span>
+              <input
+                class="input pl-currency"
+                formControlName="health"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                inputmode="decimal"
+                (keydown)="blockInvalidNumberKeys($event)"
+                (input)="onNumberInput('health', $event)"
+                (wheel)="$event.target.blur()" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Home Office Deduction</label>
+            <div class="currency-wrap">
+              <span class="currency-prefix">₹</span>
+              <input
+                class="input pl-currency"
+                formControlName="homeOffice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                inputmode="decimal"
+                (keydown)="blockInvalidNumberKeys($event)"
+                (input)="onNumberInput('homeOffice', $event)"
+                (wheel)="$event.target.blur()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit" [disabled]="status==='calculating'">
+            {{ status==='calculating' ? 'Calculating…' : 'Calculate Estimated Tax' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Summary -->
+    <div class="form-card" *ngIf="activeTab==='summary'">
+      <div class="form-card-header">
+        <h2 class="form-card-title">Tax Summary</h2>
+      </div>
+
+      <div class="grid grid-1">
+        <div class="form-group">
+          <label>Gross Income</label>
+          <div>{{ asCurrency(summary.gross) }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Total Deductions</label>
+          <div>- {{ asCurrency(summary.deductions) }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Taxable Income</label>
+          <div>{{ asCurrency(summary.taxable) }}</div>
+        </div>
+
+        <hr />
+
+        <div class="form-group">
+          <label><strong>Estimated Tax</strong></label>
+          <div><strong>{{ asCurrency(summary.estimatedTax) }}</strong></div>
+        </div>
+
+        <div *ngIf="status==='idle'" style="color:#666; font-size: 13px; margin-top: 4px;">
+          Enter details on the form tab and click “Calculate” for server-side save. Summary updates live locally.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inline snackbar outlet -->
+  <div class="snack-container" aria-live="polite" aria-atomic="true">
+    <div *ngFor="let s of snacks" class="snack" [ngClass]="s.kind">
+      <span class="snack-text">{{ s.text }}</span>
+      <button class="snack-close" (click)="dismissSnack(s.id)" aria-label="Dismiss">×</button>
+    </div>
+  </div>
+
+  <!-- Budgets Modal -->
+  <div class="modal-backdrop" *ngIf="showBudget" (click)="closeBudget()"></div>
+  <div class="modal-shell" *ngIf="showBudget" (click)="closeBudget()" tabindex="-1">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-scroll">
+        
+      </div>
+    </div>
+  </div>
+</div>
+

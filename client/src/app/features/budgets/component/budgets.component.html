@@ -1,0 +1,194 @@
+<div class="budgets-wrapper budget-page">
+  <!-- HEADER -->
+  <header class="dashboard-header budget-header">
+    <div class="header-content">
+      <h1 class="page-title">Budget Intelligence</h1>
+      <p class="subtitle">Smart tracking for {{ currentMonthDisplay }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-export shadow-glow" (click)="exportToPDF()" [disabled]="!budget">
+        <i class="icon-share">📄</i> Export PDF
+      </button>
+      <button class="btn btn-primary shadow-glow" (click)="editing = !editing">
+        {{ editing ? 'View Dashboard' : (budget ? 'Adjust Budget' : '+ Setup Budget') }}
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ LOADING STATE ============ -->
+  <div class="state-container" *ngIf="loading">
+    <div class="glass-loader"></div>
+    <p class="state-text">Synthesizing your financial data...</p>
+  </div>
+
+  <!-- ============ ERROR STATE ============ -->
+  <div class="state-container error-state" *ngIf="!loading && error">
+    <div class="error-icon">⚠️</div>
+    <h3>Something went wrong</h3>
+    <p class="state-text">{{ error }}</p>
+    <button class="btn btn-primary" (click)="retryLoad()">Retry</button>
+  </div>
+
+  <!-- ============ CONTENT (NO ERROR) ============ -->
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- SETUP / EDIT SECTION -->
+    <section *ngIf="!budget || editing" class="edit-area slide-up">
+      <div class="setup-insight budget-card">
+        <h3>Budget Setup Assistant</h3>
+        <p>{{ budgetInsight }}</p>
+      </div>
+      <app-budget-form
+        [initialData]="budget"
+        [editing]="!!budget"
+        (saved)="onSaved()"
+        [showCancel]="!!budget"
+        (cancel)="editing = false">
+      </app-budget-form>
+    </section>
+
+    <!-- EMPTY STATE — no budget exists and not editing -->
+    <div class="state-container empty-state" *ngIf="!budget && !editing">
+      <div class="empty-icon">📊</div>
+      <h3>No Budget Setup Yet</h3>
+      <p class="state-text">
+        Set your monthly spending plan to track category-wise allocations.
+      </p>
+      <button class="btn btn-primary" (click)="editing = true">
+        Create Budget
+      </button>
+    </div>
+
+    <!-- ============ DASHBOARD VIEW ============ -->
+    <main *ngIf="budget && !editing" class="dashboard-main fade-in">
+
+      <!-- TOP SUMMARY CARDS -->
+      <section class="summary-grid">
+        <div class="summary-card budget-card">
+          <div class="card-icon blue">💰</div>
+          <div class="card-info">
+            <label>Total Budget</label>
+            <h3>{{ budget.totalBudget | currency:'INR':'symbol':'1.0-0' }}</h3>
+          </div>
+        </div>
+        <div class="summary-card budget-card">
+          <div class="card-icon orange">🧾</div>
+          <div class="card-info">
+            <label>Total Allocated</label>
+            <h3 [class.over]="totalAllocated > budget.totalBudget">
+              {{ totalAllocated | currency:'INR':'symbol':'1.0-0' }}
+            </h3>
+          </div>
+        </div>
+        <div class="summary-card budget-card">
+          <div class="card-icon green">✨</div>
+          <div class="card-info">
+            <label>Remaining Budget</label>
+            <h3 [class.over]="unallocatedAmount < 0">{{ unallocatedAmount | currency:'INR':'symbol':'1.0-0' }}</h3>
+          </div>
+        </div>
+        <div class="summary-card budget-card">
+          <div class="card-icon purple">📈</div>
+          <div class="card-info">
+            <label>Categories</label>
+            <h3>{{ categoriesCount }}</h3>
+          </div>
+        </div>
+      </section>
+      <div class="allocation-insight budget-card">
+        {{ budgetInsight }}
+      </div>
+
+      <!-- MIDDLE CONTENT: CHARTS & CATEGORIES -->
+      <div class="dash-content-grid">
+
+        <!-- LEFT: ANALYTICS CHARTS -->
+        <div class="analytics-panel">
+          <div class="chart-container big-chart budget-card">
+            <div class="card-header">
+              <h4>Spending Distribution</h4>
+              <div class="chart-legend">By Category</div>
+            </div>
+            <div class="chart-box">
+              <canvas #pieCanvas></canvas>
+            </div>
+          </div>
+
+          <div class="chart-container comparison-chart budget-card">
+            <div class="card-header">
+              <h4>Monthly Trend</h4>
+              <div class="chart-legend">Current vs Previous</div>
+            </div>
+            <div class="chart-box">
+              <canvas #barCanvas></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: CATEGORY LIST -->
+        <div class="categories-panel">
+          <div class="card-header-bar">
+            <h4>Limits & Allocations</h4>
+            <span class="count">{{ budget.categories.length }} Categories</span>
+          </div>
+
+          <!-- Category cards -->
+          <div class="category-cards-scroll" *ngIf="hasCategories; else emptyCategories">
+            <div class="category-card budget-card" *ngFor="let cat of budget.categories; trackBy: trackCategory">
+              <div class="cat-header">
+                <span class="cat-name">{{ cat.name }}</span>
+                <span class="cat-values">
+                  <strong>{{ (cat.spent || 0) | currency:'INR':'symbol':'1.0-0' }}</strong>
+                  / {{ cat.limit | currency:'INR':'symbol':'1.0-0' }}
+                </span>
+              </div>
+
+              <div class="progress-container">
+                <div class="progress-track">
+                  <div class="progress-fill"
+                    [ngStyle]="{'width': getPercent(cat.spent || 0, cat.limit) + '%', 'background': getProgressColor(cat.spent || 0, cat.limit)}">
+                  </div>
+                </div>
+                <div class="progress-meta">
+                  <span class="percent-label">{{ getPercent(cat.spent || 0, cat.limit) | number:'1.0-0' }}% used</span>
+                  <span class="status-badge"
+                    [class.badge-danger]="getPercent(cat.spent || 0, cat.limit) >= 100"
+                    [class.badge-warning]="getPercent(cat.spent || 0, cat.limit) >= 80 && getPercent(cat.spent || 0, cat.limit) < 100"
+                    [class.badge-success]="getPercent(cat.spent || 0, cat.limit) < 80">
+                    {{ getStatusLabel(cat.spent || 0, cat.limit) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty categories fallback -->
+          <ng-template #emptyCategories>
+            <div class="empty-categories-msg">
+              <p>No category allocations configured.</p>
+              <button class="btn btn-primary btn-sm" (click)="editing = true">Add Categories</button>
+            </div>
+          </ng-template>
+
+          <!-- SMART INSIGHTS -->
+          <div class="smart-insights">
+            <div class="insight-header">
+              <i class="bulb-icon">💡</i>
+              <h5>Smart Insights</h5>
+            </div>
+            <ul class="insight-list">
+              <li *ngFor="let msg of alerts" class="warning">{{ msg }}</li>
+              <li *ngIf="!alerts.length && budget.totalSpent === 0">
+                <strong>No expenses recorded yet.</strong> Add transactions to see spending insights.
+              </li>
+              <li *ngIf="!alerts.length && budget.totalSpent > 0">
+                <strong>On track!</strong> Your spending is stable this month.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </ng-container>
+</div>

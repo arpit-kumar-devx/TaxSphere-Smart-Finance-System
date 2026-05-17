@@ -1,0 +1,12 @@
+<div class="ca-layout" [class.ca-sidebar-open]="sidebarOpen" *ngIf="user$ | async as me">
+  <app-ca-sidebar [user]="me" (navigate)="closeSidebar()"></app-ca-sidebar>
+
+  <main class="ca-main">
+    <app-ca-topbar (menuToggle)="toggleSidebar()" (logoutClick)="logout()"></app-ca-topbar>
+    <section class="ca-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+
+  <button class="ca-mobile-overlay" *ngIf="sidebarOpen" type="button" (click)="closeSidebar()" aria-label="Close sidebar"></button>
+</div>

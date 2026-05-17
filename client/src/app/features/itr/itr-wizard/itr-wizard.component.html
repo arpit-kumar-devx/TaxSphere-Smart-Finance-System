@@ -1,0 +1,169 @@
+<div class="wiz" *ngIf="itr">
+  <nav class="steps">
+    <button type="button" [class.on]="step===0" (click)="step=0">1 · Profile</button>
+    <button type="button" [class.on]="step===1" (click)="step=1" [disabled]="!editable">2 · Income</button>
+    <button type="button" [class.on]="step===2" (click)="step=2" [disabled]="!editable">3 · Deductions</button>
+    <button type="button" [class.on]="step===3" (click)="step=3">4 · Tax</button>
+    <button type="button" [class.on]="step===4" (click)="step=4" [disabled]="!editable">5 · Docs</button>
+  </nav>
+
+  <p class="banner" *ngIf="!editable">This filing is locked for editing. Status: <strong>{{ statusLabel(currentFilingStatus) }}</strong></p>
+  <p class="ok" *ngIf="msg">{{ msg }}</p>
+  <p class="bad" *ngIf="err">{{ err }}</p>
+
+  <!-- Step 0 -->
+  <section *ngIf="step===0" class="panel">
+    <h2>Personal details</h2>
+    <div class="row2">
+      <label>First name<input [(ngModel)]="itr.personalInfo.firstName" name="fn" [readonly]="!editable" /></label>
+      <label>Last name<input [(ngModel)]="itr.personalInfo.lastName" name="ln" [readonly]="!editable" /></label>
+    </div>
+    <div class="row2">
+      <label>PAN<input [(ngModel)]="itr.personalInfo.pan" name="pan" maxlength="10" class="mono" [readonly]="!editable" /></label>
+      <label>Mobile<input [(ngModel)]="itr.personalInfo.mobile" name="mob" [readonly]="!editable" /></label>
+    </div>
+    <label>Email<input type="email" [(ngModel)]="itr.personalInfo.email" name="em" [readonly]="!editable" /></label>
+    <div class="row2">
+      <label>Assessment year<input [(ngModel)]="itr.assessmentYear" name="ay" [readonly]="!editable" /></label>
+      <label>Financial year<input [(ngModel)]="itr.financialYear" name="fy" [readonly]="!editable" /></label>
+    </div>
+      <label>Regime
+      <select [(ngModel)]="itr.regime" name="reg" [disabled]="!editable" (ngModelChange)="onInputChange()">
+        <option value="NEW">New regime</option>
+        <option value="OLD">Old regime</option>
+      </select>
+    </label>
+    <div class="actions">
+      <a routerLink="/itr" class="link">← Back to list</a>
+      <button type="button" class="primary" (click)="next()" [disabled]="!editable">Save & continue</button>
+    </div>
+  </section>
+
+  <!-- Step 1 -->
+  <section *ngIf="step===1" class="panel">
+    <h2>Income</h2>
+    <div class="row2">
+      <label>Salary<input type="number" [(ngModel)]="itr.income.salary" name="s" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+      <label>Business<input type="number" [(ngModel)]="itr.income.business" name="b" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+    </div>
+    <div class="row2">
+      <label>Capital gains<input type="number" [(ngModel)]="itr.income.capitalGains" name="cg" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+      <label>Other<input type="number" [(ngModel)]="itr.income.otherIncome" name="o" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+    </div>
+    <div class="actions">
+      <button type="button" (click)="prev()">Back</button>
+      <button type="button" class="primary" (click)="next()" [disabled]="!editable">Continue</button>
+    </div>
+  </section>
+
+  <!-- Step 2 -->
+  <section *ngIf="step===2" class="panel">
+    <h2>Deductions (mainly old regime)</h2>
+    <p class="hint">Under the new regime, most Chapter VI-A deductions are not applied in this calculator; standard deduction is applied on the server.</p>
+    <div class="row2">
+      <label>80C<input type="number" [(ngModel)]="itr.deductions.c80C" name="c80c" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+      <label>80D<input type="number" [(ngModel)]="itr.deductions.c80D" name="c80d" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+    </div>
+    <div class="row2">
+      <label>80E<input type="number" [(ngModel)]="itr.deductions.c80E" name="c80e" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+      <label>80G<input type="number" [(ngModel)]="itr.deductions.c80G" name="c80g" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+    </div>
+    <label>NPS (80CCD)<input type="number" [(ngModel)]="itr.deductions.nps" name="nps" [readonly]="!editable" (ngModelChange)="onInputChange()" /></label>
+    <div class="actions">
+      <button type="button" (click)="prev()">Back</button>
+      <button type="button" class="primary" (click)="runCalculate()" [disabled]="!editable || busy">Calculate tax</button>
+    </div>
+  </section>
+
+  <!-- Step 3 -->
+  <section *ngIf="step===3" class="panel glass">
+    <h2>Tax summary</h2>
+    <div class="hint" *ngIf="liveCalcBusy">Updating tax…</div>
+    <ul class="tax-lines">
+      <li><span>Total income</span><strong>₹{{ itr.income.totalIncome | number:'1.0-0' }}</strong></li>
+      <li><span>Taxable income</span><strong>₹{{ itr.taxSummary.taxableIncome | number:'1.0-0' }}</strong></li>
+      <li><span>Tax before rebate</span><strong>₹{{ itr.taxSummary.taxBeforeRebate | number:'1.0-0' }}</strong></li>
+      <li><span>Rebate 87A</span><strong>₹{{ itr.taxSummary.rebate87A | number:'1.0-0' }}</strong></li>
+      <li><span>Cess (4%)</span><strong>₹{{ itr.taxSummary.cess | number:'1.0-2' }}</strong></li>
+      <li class="total"><span>Final tax</span><strong>₹{{ itr.taxSummary.finalTax | number:'1.0-0' }}</strong></li>
+    </ul>
+    <div class="actions">
+      <button type="button" (click)="prev()">Back</button>
+      <button type="button" class="primary" (click)="step=4" *ngIf="editable">Continue to documents</button>
+    </div>
+  </section>
+
+  <!-- Step 4 -->
+  <section *ngIf="step===4" class="panel">
+    <h2>Upload Documents</h2>
+    <p class="hint">Upload your PAN, Aadhaar, Form 16, and other necessary proofs to proceed. (Max size: 5MB)</p>
+    
+    <div class="upload-zone glass-up" *ngIf="editable">
+      <div class="up-controls">
+        <label class="compact-label">Document Type
+          <select [(ngModel)]="uploadType" name="dt" class="up-select">
+            <option *ngFor="let t of docTypes" [value]="t">{{ t }}</option>
+          </select>
+        </label>
+        
+        <label class="compact-label">Select File
+          <div class="file-wrapper">
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg" (change)="onFileSelected($event)" class="file-in" id="fileInBase" />
+            <span class="file-custom">{{ fileInput ? fileInput.name : 'Choose file...' }}</span>
+          </div>
+        </label>
+      </div>
+
+      <button type="button" class="primary up-btn" (click)="uploadDoc()" [disabled]="!fileInput || busy">
+        <svg class="ic-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m0-12l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        Upload File
+      </button>
+    </div>
+
+    <table class="docs" *ngIf="itr.documents?.length">
+      <thead><tr><th>Type</th><th>File Name</th><th>Status</th><th>View</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let d of itr.documents">
+          <td><strong>{{ d.type }}</strong></td>
+          <td class="trunc" title="{{ d.fileName || 'Attached File' }}">{{ d.fileName || 'Attached File' }}</td>
+          <td><span class="tag" [class.verified]="d.status === 'verified'" [class.rejected]="d.status === 'rejected'">{{ d.status }}</span></td>
+          <td><a [href]="d.fileUrl" target="_blank" rel="noopener" class="link open-link">Open ↗</a></td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="!itr.documents?.length" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" class="empty-ic"><path d="M19.5 14.5v-5m0 5h-5m5 0l-6-6m-4-6h6l6 6v10a2 2 0 01-2 2H6.5a2 2 0 01-2-2v-14a2 2 0 012-2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>No documents uploaded yet.</p>
+    </div>
+
+    <div class="actions" *ngIf="editable">
+      <button type="button" (click)="step=3">Back</button>
+      <div class="pay-btn-wrapper">
+        <button type="button" class="accent" (click)="submitForPayment()" [disabled]="busy || !hasRequiredDocs">
+          Review &amp; Proceed to Pay
+        </button>
+        <p class="missing-docs-hint" *ngIf="!hasRequiredDocs">
+          Upload PAN, Aadhaar, and Form 16 to enable payment
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Post-payment -->
+  <section *ngIf="step===5" class="panel done">
+    <h2>Filing status</h2>
+    <p class="big-st">{{ statusLabel(currentFilingStatus) }}</p>
+    <span class="pay-completed-badge" *ngIf="isPaymentCompleted">Payment Completed</span>
+    <p [class]="statusMessageClass">{{ filingStatusMessage }}</p>
+    <div class="actions">
+      <a routerLink="/itr" class="link">All filings</a>
+      <button type="button" class="primary" *ngIf="canShowPayAction" (click)="goPay()">{{ payActionText }}</button>
+      <button type="button" class="receipt-btn" *ngIf="isPaymentCompleted" (click)="downloadReceipt()">Download Receipt</button>
+      <button type="button" class="receipt-btn" *ngIf="isPaymentCompleted" (click)="downloadInvoice()">Download Invoice</button>
+      <button type="button" class="receipt-btn" *ngIf="isPaymentCompleted" (click)="downloadItrPdf()">Download ITR PDF</button>
+    </div>
+  </section>
+</div>
+
+<div *ngIf="!itr && !err" class="wiz loading">Loading…</div>
+<div *ngIf="err && !itr" class="wiz loading bad">{{ err }}</div>

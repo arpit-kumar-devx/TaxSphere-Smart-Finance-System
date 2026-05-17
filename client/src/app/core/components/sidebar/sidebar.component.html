@@ -1,0 +1,97 @@
+<div class="drawer-overlay" *ngIf="layout.isSidebarOpen()" (click)="layout.closeSidebar()" [class.open]="layout.isSidebarOpen()"></div>
+
+<div class="sidebar" [class.open]="layout.isSidebarOpen()" [class.collapsed]="layout.isSidebarCollapsed()" [class.user-sidebar]="role === 'USER'" role="navigation" aria-label="Primary">
+  <div class="sidebar-top">
+    <div class="branding" [class.hide-text]="layout.isSidebarCollapsed()">
+      <h1 *ngIf="!layout.isSidebarCollapsed()">TaxSphere<span class="dot">.</span></h1>
+    </div>
+
+    <button class="collapse-toggle" (click)="layout.toggleCollapse()" title="Toggle Sidebar">
+      <span class="arrow">{{ layout.isSidebarCollapsed() ? '→' : '←' }}</span>
+    </button>
+  </div>
+
+  <div class="sidebar-content">
+    <div class="nav-section">
+      <p class="section-label" *ngIf="!layout.isSidebarCollapsed()">Compliance Workspace</p>
+      <div class="menu">
+        <ng-container *ngIf="role === 'USER'">
+          <a routerLink="/app/dashboard" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon dash-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Dashboard</span>
+          </a>
+          <a routerLink="/app/transactions" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon tx-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Transactions</span>
+          </a>
+          <a routerLink="/app/budget" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon budget-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Budget</span>
+          </a>
+          <a routerLink="/app/itr" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon itr-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">ITR Filing</span>
+          </a>
+          <a routerLink="/app/tax-estimator" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon calc-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Tax Estimator</span>
+          </a>
+          <a routerLink="/app/tax-calendar" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon cal-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Tax Calendar</span>
+          </a>
+        </ng-container>
+
+        <ng-container *ngIf="role === 'CA'">
+          <a routerLink="/app/ca" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon client-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Audit Queue</span>
+          </a>
+        </ng-container>
+
+        <ng-container *ngIf="role === 'ADMIN'">
+          <a routerLink="/app/admin/dashboard" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon dash-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Admin Central</span>
+          </a>
+          <a routerLink="/app/admin/users" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+            <i class="nav-icon group-icon"></i>
+            <span *ngIf="!layout.isSidebarCollapsed()">Team Control</span>
+          </a>
+        </ng-container>
+
+        <a [routerLink]="getAnalyticsRoute()" routerLinkActive="active" (click)="closeMobileNavIfSmall()">
+          <i class="nav-icon report-icon"></i>
+          <span *ngIf="!layout.isSidebarCollapsed()">Analytics</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer" *ngIf="user$ | async as user">
+    <div
+      class="profile-mini"
+      [class.collapsed]="layout.isSidebarCollapsed()"
+      (click)="openProfile()"
+      role="button"
+      tabindex="0"
+      (keydown.enter)="openProfile()"
+      (keydown.space)="openProfile(); $event.preventDefault()"
+      title="Open profile"
+    >
+      <img *ngIf="user?.profilePhoto" [src]="resolvePhoto(user.profilePhoto)" alt="Profile photo" class="avatar-photo" />
+      <div class="avatar" *ngIf="!user?.profilePhoto">{{ user?.name ? user.name[0] : 'U' }}</div>
+
+      <div class="info" *ngIf="!layout.isSidebarCollapsed()">
+        <span class="p-name">{{ user.name || 'User' }}</span>
+        <span class="p-role">{{ user.role || 'USER' }}</span>
+        <span class="p-sub">{{ user.email || 'No email set' }}</span>
+      </div>
+
+      <div class="profile-actions" *ngIf="!layout.isSidebarCollapsed()">
+        <button class="icon-btn" title="Profile settings" (click)="openProfile($event)">⚙️</button>
+        <button class="icon-btn logout-btn" (click)="logout($event)" title="Logout">🚪</button>
+      </div>
+    </div>
+  </div>
+</div>

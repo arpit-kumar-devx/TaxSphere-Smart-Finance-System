@@ -1,0 +1,161 @@
+<div class="profile-root">
+  <div class="main-content">
+    <div class="header header--sticky">
+      <div class="header-left">
+        <button type="button" class="btn-menu" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+        <h2>Profile Settings</h2>
+      </div>
+      <div class="user-actions">
+        <a class="btn-icon close-btn" routerLink="/app/dashboard" aria-label="Close and go to dashboard" title="Close">✕</a>
+      </div>
+    </div>
+
+    <div *ngIf="error && !loading" class="error-card">
+      <div>
+        <h4>Unable to load profile</h4>
+        <p>{{ error }}</p>
+      </div>
+      <button class="btn btn-secondary" type="button" (click)="fetch()">Retry</button>
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div class="skeleton card"></div>
+      <div class="skeleton card"></div>
+      <div class="skeleton card"></div>
+    </div>
+
+    <div *ngIf="!loading" class="profile-grid">
+      <section class="card profile-header">
+        <div class="avatar-wrap">
+          <img *ngIf="photoPreviewUrl; else fallbackAvatar" [src]="photoPreviewUrl" alt="Profile photo" class="avatar-photo" />
+          <ng-template #fallbackAvatar>
+            <div class="avatar-fallback">{{ (form.value.fullName || 'U').charAt(0) }}</div>
+          </ng-template>
+        </div>
+        <div class="header-meta">
+          <h3>{{ form.value.fullName || 'User' }}</h3>
+          <p>{{ form.value.email || 'No email available' }}</p>
+          <div class="meta-row">
+            <span class="badge">{{ profile?.role || 'USER' }}</span>
+            <span class="status">{{ profile?.status || 'active' }}</span>
+            <span class="member">Member since {{ (profile?.memberSince || '') | date: 'MMM y' }}</span>
+          </div>
+        </div>
+        <div class="photo-actions">
+          <input type="file" accept=".jpg,.jpeg,.png" (change)="onPhotoSelected($event)" />
+          <button class="btn btn-primary" type="button" [disabled]="!selectedPhotoFile || uploadingPhoto" (click)="uploadPhoto()">
+            {{ uploadingPhoto ? 'Uploading...' : 'Save Photo' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="card completion-card">
+        <h4>Profile Completion</h4>
+        <div class="progress-bar">
+          <div class="progress" [style.width.%]="completionPercent"></div>
+        </div>
+        <p>{{ completionPercent }}% completed</p>
+        <p class="missing" *ngIf="missingFields.length">Missing: {{ missingFields.join(', ') }}</p>
+      </section>
+
+      <section class="card empty-card" *ngIf="!hasOptionalProfileData">
+        <h4>Complete your profile</h4>
+        <p>Add phone, address, PAN, Aadhaar, and occupation details for better personalization.</p>
+      </section>
+
+      <form class="card" [formGroup]="form" (ngSubmit)="save()">
+        <h4>Personal Information</h4>
+        <div class="grid">
+          <div class="field"><label>Full Name</label><input type="text" formControlName="fullName" /></div>
+          <div class="field"><label>Email</label><input type="email" formControlName="email" /></div>
+          <div class="field"><label>Phone</label><input type="text" formControlName="phone" /></div>
+          <div class="field"><label>Date of Birth</label><input type="date" formControlName="dob" /></div>
+          <div class="field">
+            <label>Gender</label>
+            <select formControlName="gender">
+              <option value="prefer_not_to_say">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Country</label><input type="text" formControlName="country" /></div>
+          <div class="field"><label>City</label><input type="text" formControlName="city" /></div>
+          <div class="field full"><label>Address</label><textarea formControlName="address" rows="2"></textarea></div>
+        </div>
+
+        <h4>Professional and Financial Details</h4>
+        <div class="grid">
+          <div class="field"><label>Occupation</label><input type="text" formControlName="occupation" /></div>
+          <div class="field">
+            <label>Work Type</label>
+            <select formControlName="workType">
+              <option value="freelancer">Freelancer</option>
+              <option value="salaried">Salaried</option>
+              <option value="business">Business</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>PAN Number</label><input type="text" formControlName="panNumber" placeholder="ABCDE1234F" /></div>
+          <div class="field"><label>Aadhaar Number</label><input type="text" formControlName="aadhaarNumber" placeholder="12-digit Aadhaar" /></div>
+          <div class="field"><label>PAN (masked)</label><div class="masked">{{ maskedPan }}</div></div>
+          <div class="field"><label>Aadhaar (masked)</label><div class="masked">{{ maskedAadhaar }}</div></div>
+          <div class="field">
+            <label>Preferred Tax Regime</label>
+            <select formControlName="taxRegime">
+              <option value="new">New</option>
+              <option value="old">Old</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Annual Income Bracket</label>
+            <select formControlName="incomeBracket">
+              <option value="under_5l">Under 5L</option>
+              <option value="5l_10l">5L - 10L</option>
+              <option value="10l_25l">10L - 25L</option>
+              <option value="25l_50l">25L - 50L</option>
+              <option value="50l_plus">50L+</option>
+            </select>
+          </div>
+        </div>
+
+        <h4>Account Preferences</h4>
+        <div class="toggle-grid">
+          <label><input type="checkbox" formControlName="productUpdates" /> Product updates</label>
+          <label><input type="checkbox" formControlName="taxAlerts" /> Tax alerts</label>
+          <label><input type="checkbox" formControlName="reminders" /> Reminders</label>
+          <label><input type="checkbox" formControlName="emailStatements" /> Email statements</label>
+          <label><input type="checkbox" formControlName="emailNewsletters" /> Newsletters</label>
+          <label><input type="checkbox" formControlName="analyticsConsent" /> Analytics consent</label>
+        </div>
+        <div class="field">
+          <label>Profile Privacy</label>
+          <select formControlName="profileVisibility">
+            <option value="private">Private</option>
+            <option value="team">Team</option>
+          </select>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit" [disabled]="saving">{{ saving ? 'Saving...' : 'Save Profile' }}</button>
+        </div>
+      </form>
+
+      <section class="card">
+        <h4>Update Password</h4>
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+          <div class="grid">
+            <div class="field"><label>Current Password</label><input type="password" formControlName="currentPassword" /></div>
+            <div class="field"><label>New Password</label><input type="password" formControlName="newPassword" /></div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary" type="submit" [disabled]="changingPassword">
+              {{ changingPassword ? 'Updating...' : 'Update Password' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>
+

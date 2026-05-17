@@ -1,0 +1,28 @@
+<div class="ca-sidebar-inner">
+  <div class="brand">
+    <div class="logo">CA</div>
+    <div>
+      <h2>TaxSphere</h2>
+      <p>CA Command Center</p>
+    </div>
+  </div>
+
+  <div class="profile" *ngIf="user">
+    <div class="avatar">{{ (user?.name || 'C').charAt(0) }}</div>
+    <div class="profile-meta">
+      <strong>{{ user?.name }}</strong>
+      <small>{{ user?.email }}</small>
+    </div>
+  </div>
+
+  <nav>
+    <a routerLink="/app/ca" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="navigate.emit()">Audit Queue</a>
+    <a routerLink="/app/ca/analytics" routerLinkActive="active" (click)="navigate.emit()">Analytics</a>
+    <a routerLink="/app/ca/profile" routerLinkActive="active" (click)="navigate.emit()">Professional Profile</a>
+    <a routerLink="/app/ca/assigned-clients" routerLinkActive="active" (click)="navigate.emit()">Assigned Clients</a>
+    <a routerLink="/app/ca/document-verification" routerLinkActive="active" (click)="navigate.emit()">Document Verification</a>
+    <a routerLink="/app/ca/review-history" routerLinkActive="active" (click)="navigate.emit()">Review History</a>
+    <a routerLink="/app/ca/earnings" routerLinkActive="active" (click)="navigate.emit()">Earnings / Commission</a>
+    <a routerLink="/app/ca/settings" routerLinkActive="active" (click)="navigate.emit()">Settings</a>
+  </nav>
+</div>

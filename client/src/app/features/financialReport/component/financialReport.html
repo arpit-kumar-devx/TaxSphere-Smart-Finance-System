@@ -1,0 +1,217 @@
+<div class="main">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <button type="button" class="hamburger mobile-only" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+      <h1><strong>Financial Dashboard</strong></h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="exportExcel()" [disabled]="loading || !data">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="8" y1="13" x2="16" y2="13"></line>
+          <line x1="8" y1="17" x2="16" y2="17"></line>
+        </svg>
+        <span class="desktop-only">Excel Download</span>
+      </button>
+      <button class="btn btn-primary" (click)="downloadPDF()" [disabled]="loading || !data">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span class="desktop-only">Export PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="page" *ngIf="loading">
+    <div class="empty-state">
+      <div class="spinner"></div>
+      <p>Loading your financial snapshot...</p>
+    </div>
+  </div>
+
+  <div class="page" *ngIf="!loading && errorMsg">
+    <div class="error-banner">
+      {{ errorMsg }}
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page p-content" *ngIf="!loading && !errorMsg && data">
+    <button type="button" class="close-page" aria-label="Close" (click)="onClose()" title="Close">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M6 6l12 12M18 6L6 18" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
+    <!-- STAT CARDS -->
+    <div class="states-grid grid-responsive grid-4-2-1">
+      <div class="stat-card">
+        <div class="stat-icon income-bg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <h3>Total Income</h3>
+          <p class="amount income-text">₹{{ data.totalIncome.toFixed(2) }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon expense-bg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+             <polyline points="17 18 23 18 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <h3>Total Expenses</h3>
+          <p class="amount expense-text">₹{{ data.totalExpense.toFixed(2) }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon profit-bg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <h3>Net Profit</h3>
+          <p class="amount profit-text">₹{{ data.netProfit.toFixed(2) }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon tax-bg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="stat-info">
+          <h3>Tax Paid</h3>
+          <p class="amount tax-text">₹{{ data.taxPaid.toFixed(2) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN MIDDLE: Charts + AI -->
+    <div class="dashboard-middle">
+      <!-- OVERVIEW CHART -->
+      <section class="card chart-section stats-chart">
+        <h2 class="card-title">Income vs Expenses</h2>
+        <div class="chart-wrapper compact-chart">
+           <canvas baseChart 
+                   [data]="barChartData"
+                   [options]="barChartOptions"
+                   [legend]="false"
+                   [type]="'bar'">
+           </canvas>
+        </div>
+      </section>
+
+      <!-- TREND CHART (Monthly) -->
+      <section class="card chart-section trend-chart">
+        <h2 class="card-title">Cash Flow Trends</h2>
+        <div class="chart-wrapper">
+           <canvas baseChart 
+                   [data]="lineChartData"
+                   [options]="lineChartOptions"
+                   [legend]="true"
+                   [type]="'line'">
+           </canvas>
+        </div>
+      </section>
+
+      <!-- AI INSIGHTS CARD -->
+      <section class="card ai-card glass-panel">
+        <div class="ai-header">
+           <div class="ai-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+                <path d="M12 16V12"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+           </div>
+           <div>
+             <h2 class="card-title mb-0">AI Financial Insights</h2>
+             <p class="text-xs text-slate-500">Based on your {{ latestRegime }} regime data</p>
+           </div>
+        </div>
+        
+        <div class="insights-body">
+           <div *ngIf="loadingInsights" class="ai-loading">
+             <div class="spinner small"></div> Analyzing your finances...
+           </div>
+
+           <div *ngIf="!loadingInsights && insights.length === 0" class="empty-msg">
+              <p>Start recording transactions to get personalized insights.</p>
+           </div>
+
+           <div *ngIf="!loadingInsights && insights.length > 0" class="insight-list">
+              <div *ngFor="let msg of insights" class="insight-item-new">
+                 <div class="bullet-dot"></div>
+                 <p>{{ msg }}</p>
+              </div>
+           </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RECENT TRANSACTIONS TABLE -->
+    <section class="card mt-4">
+      <h2 class="card-title">Latest Transactions Summary</h2>
+
+      <div class="table-responsive" *ngIf="data.transactions && data.transactions.length > 0; else noTx">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th class="desktop-only">Category/Source</th>
+              <th>Type</th>
+              <th class="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of data.transactions">
+              <td data-label="Date">{{ tx.date | date:'shortDate' }}</td>
+              <td data-label="Description"><strong>{{ tx.title || tx.description || 'System Entry' }}</strong></td>
+              <td data-label="Source" class="desktop-only">
+                 <span class="badge">{{ tx.source || tx.category || 'Other' }}</span>
+              </td>
+              <td data-label="Type">
+                 <span [class]="(tx.amount > 0 || tx.type === 'Income') ? 'badge badge-green' : 'badge badge-red'">
+                    {{ tx.amount > 0 ? 'Inc' : 'Exp' }}
+                 </span>
+              </td>
+              <td data-label="Amount" class="text-right fw-bold" [ngStyle]="{'color': (tx.amount > 0 || tx.type === 'Income') ? '#10b981' : '#ef4444'}">
+                {{ tx.amount | currency:'INR' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <ng-template #noTx>
+         <div class="empty-state sm-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+               <polyline points="14 2 14 8 20 8"></polyline>
+               <line x1="16" y1="13" x2="8" y2="13"></line>
+               <line x1="16" y1="17" x2="8" y2="17"></line>
+               <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <p>No transactions registered for the selected period.</p>
+         </div>
+      </ng-template>
+
+    </section>
+  </div>
+</div>

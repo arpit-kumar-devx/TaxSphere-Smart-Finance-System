@@ -1,0 +1,130 @@
+<!-- Main -->
+<div class="main">
+  <!-- Sticky, two-row header -->
+  <div class="top-bar">
+    <button type="button" class="hamburger" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+    <h1 class="top-title"><strong>Tax Calendar</strong></h1>
+
+    <div class="header-cta">
+      <!-- <a class="btn btn-outline btn-back"
+         routerLink="/dashboard"
+         (click)="closeMobileNavIfSmall()">
+        <span>Back to Dashboard</span>
+      </a> -->
+
+      <button type="button" class="btn btn-primary btn-calc-tax" (click)="goToEstimator()">
+        Calculate Tax
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="budgets-container">
+    <main class="main-content">
+      <section class="form-section">
+        <div class="form-card">
+          <div class="form-card-header">
+            <h2 class="form-card-title">Quarterly Schedule</h2>
+
+            <div class="header-actions">
+              <button
+                type="button"
+                class="btn btn-danger"
+                [disabled]="bulkBusy || loading"
+                (click)="deleteAllReminders()">
+                {{ bulkBusy ? 'Deleting…' : 'Delete All Reminders' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="tabs-container">
+            <button class="btn tab-btn" [class.active]="activeTab === 'upcoming'" (click)="activeTab = 'upcoming'">Upcoming Schedule</button>
+            <button class="btn tab-btn" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">History</button>
+          </div>
+
+          <div *ngIf="loading" class="status-banner status--loading">
+            Loading events from server…
+          </div>
+          <div *ngIf="!loading && error" class="status-banner status--err">
+            {{ error }}
+          </div>
+          <div *ngIf="!loading && bulkMsg" class="status-banner" [ngClass]="{'status--ok': !error, 'status--loading': bulkBusy}">
+            {{ bulkMsg }}
+          </div>
+
+          <div class="calendar" *ngIf="!loading && !error">
+            <ng-container *ngIf="(sections?.length ?? 0) > 0; else empty">
+              <ng-container *ngFor="let section of sections">
+                <div class="calendar__month">{{ section.monthLabel }}</div>
+
+                <div class="calendar__list">
+                  <div class="card" *ngFor="let item of section.items">
+                    <div class="card__main">
+                      <div class="card__title">
+                        <div>
+                          <span class="card__title-text" style="display: block;">{{ item.title }}</span>
+                          <span [ngClass]="badgeClass(item.type)">{{ item.type }}</span>
+                          <span [ngClass]="statusBadgeClass(item.status)" *ngIf="activeTab === 'history'" style="margin-left: 6px;">{{ item.status | uppercase }}</span>
+                        </div>
+                      </div>
+
+                      <div class="card__date">
+                        {{ item.date | date:'MMM d, y' }}
+                      </div>
+
+                      <div class="card__note" *ngIf="item.note">
+                        {{ item.note }}
+                      </div>
+
+                      <div class="card__actions" *ngIf="item.type === 'payment' && item.status === 'upcoming'">
+                        <button
+                          type="button"
+                          class="btn btn-success btn-block-sm"
+                          [disabled]="isCompleting(item._id)"
+                          (click)="markComplete(item)">
+                          {{ isCompleting(item._id) ? 'Completing…' : 'Mark as Paid ' }}
+                        </button>
+                      </div>
+
+                      <div class="card__actions" *ngIf="item.type === 'reminder' && item.status === 'upcoming'">
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-block-sm"
+                          [disabled]="isDeleting(item._id)"
+                          (click)="deleteReminder(item)">
+                          {{ isDeleting(item._id) ? 'Deleting…' : 'Delete' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+
+            <ng-template #empty>
+              <div class="recent-empty">
+                No calendar events yet.
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Budgets modal -->
+<div class="modal-backdrop" *ngIf="showBudget" (click)="closeBudget()"></div>
+<div class="modal-shell" *ngIf="showBudget" (click)="closeBudget()" tabindex="-1">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h3>Budgets</h3>
+      <button class="close-x" (click)="closeBudget()" aria-label="Close budgets">✕</button>
+    </div>
+
+    <div class="budgets-list-host">
+      
+    </div>
+  </div>
+</div>
+

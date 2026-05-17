@@ -1,0 +1,270 @@
+<div class="dashboard-root">
+  <div class="main" [class.modal-open]="showIncome || showExpense">
+    <div class="top-bar top-bar--sticky">
+      <button type="button" class="hamburger" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+      <div class="title-wrap">
+        <h1>Dashboard</h1>
+        <p class="subtitle">Live financial cockpit for tax, savings, and spending intelligence</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-outline" (click)="openIncome()">+ Add Income</button>
+        <button class="btn btn-solid" (click)="openExpense()">+ Add Expense</button>
+      </div>
+    </div>
+
+    <div class="dashboard-toolbar">
+      <label class="range-filter">
+        <span>Range</span>
+        <select #rangeSelect [value]="selectedRange" (change)="onRangeChange(rangeSelect.value)">
+          <option value="month">This Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year">This Year</option>
+        </select>
+      </label>
+      <div class="refresh-pill" [class.active]="refreshing">
+        <span class="dot"></span>
+        <span>{{ refreshing ? 'Refreshing live data...' : 'Live sync active' }}</span>
+      </div>
+    </div>
+
+    <div class="dashboard-error" *ngIf="dashboardError">
+      <p>{{ dashboardError }}</p>
+      <button class="btn btn-outline" (click)="retryLoad()">Retry</button>
+    </div>
+
+    <div class="cards cards-skeleton" *ngIf="loading">
+      <div class="card skeleton-card" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line tiny"></div>
+      </div>
+    </div>
+
+    <div class="cards" *ngIf="!loading">
+      <article class="card kpi-card" *ngFor="let card of kpiCards">
+        <div class="kpi-head">
+          <span class="kpi-icon">{{ card.icon }}</span>
+          <span class="kpi-title">{{ card.title }}</span>
+        </div>
+        <p class="kpi-value">{{ card.value }}</p>
+        <div class="kpi-meta">
+          <span
+            class="trend-pill"
+            [class.positive]="card.tone === 'positive'"
+            [class.negative]="card.tone === 'negative'"
+            [class.neutral]="card.tone === 'neutral'"
+          >
+            {{ card.trend >= 0 ? '+' : '' }}{{ card.trend | number : '1.0-1' }}%
+          </span>
+          <span class="kpi-subtitle">{{ card.subtitle }}</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="charts-skeleton" *ngIf="loading">
+      <div class="chart-skeleton" *ngFor="let i of [1,2,3,4]"></div>
+    </div>
+
+    <div class="expense-state" *ngIf="loading">Loading...</div>
+
+    <div class="expense-empty" *ngIf="!loading && !dashboardError && (!filteredExpenses || filteredExpenses.length === 0)">
+      No expense data available for the selected range.
+    </div>
+
+    <div class="charts-grid premium-charts" *ngIf="!loading && !dashboardError && filteredExpenses && filteredExpenses.length > 0">
+      <section class="chart-container premium-chart chart-card">
+        <h3>Income vs Expenses</h3>
+        <div class="chart-box">
+          <apx-chart
+            *ngIf="incomeExpenseHasData"
+            [series]="incomeExpenseChartOptions.series"
+            [chart]="incomeExpenseChartOptions.chart"
+            [xaxis]="$any(incomeExpenseChartOptions.xaxis)"
+            [yaxis]="$any(incomeExpenseChartOptions.yaxis)"
+            [colors]="$any(incomeExpenseChartOptions.colors)"
+            [dataLabels]="$any(incomeExpenseChartOptions.dataLabels)"
+            [plotOptions]="$any(incomeExpenseChartOptions.plotOptions)"
+            [tooltip]="$any(incomeExpenseChartOptions.tooltip)"
+            [grid]="$any(incomeExpenseChartOptions.grid)"
+          ></apx-chart>
+          <div class="chart-note" *ngIf="!incomeExpenseHasData">Income vs Expense chart will appear once transactions are available.</div>
+        </div>
+      </section>
+
+      <section class="chart-container premium-chart chart-card">
+        <h3>Cash Flow Trend</h3>
+        <div class="chart-box">
+          <apx-chart
+            *ngIf="cashFlowTrendHasData && cashFlowChartOptions"
+            [series]="cashFlowChartOptions.series"
+            [chart]="cashFlowChartOptions.chart"
+            [xaxis]="$any(cashFlowChartOptions.xaxis)"
+            [yaxis]="$any(cashFlowChartOptions.yaxis)"
+            [stroke]="$any(cashFlowChartOptions.stroke)"
+            [fill]="$any(cashFlowChartOptions.fill)"
+            [colors]="$any(cashFlowChartOptions.colors)"
+            [dataLabels]="$any(cashFlowChartOptions.dataLabels)"
+            [tooltip]="$any(cashFlowChartOptions.tooltip)"
+            [grid]="$any(cashFlowChartOptions.grid)"
+          ></apx-chart>
+          <div class="chart-note" *ngIf="!cashFlowTrendHasData">Cash flow trend appears after monthly income and expense history is available.</div>
+        </div>
+      </section>
+
+      <section class="chart-container chart-highlight">
+        <h3>Expense Distribution</h3>
+        <p class="expense-subtitle">
+          Total spent: {{ formatCurrency(expenseKpis.total) }} from {{ expenseKpis.txCount }} expense transactions
+        </p>
+        <div class="chart-box">
+          <apx-chart
+            *ngIf="expenseDistributionHasData"
+            [series]="expenseDistributionChartOptions.series"
+            [chart]="expenseDistributionChartOptions.chart"
+            [labels]="$any(expenseDistributionChartOptions.labels)"
+            [colors]="$any(expenseDistributionChartOptions.colors)"
+            [legend]="$any(expenseDistributionChartOptions.legend)"
+            [stroke]="$any(expenseDistributionChartOptions.stroke)"
+            [dataLabels]="$any(expenseDistributionChartOptions.dataLabels)"
+            [tooltip]="$any(expenseDistributionChartOptions.tooltip)"
+            [responsive]="$any(expenseDistributionChartOptions.responsive)"
+          ></apx-chart>
+          <div class="chart-note" *ngIf="!expenseDistributionHasData">Add expense entries to unlock distribution insights.</div>
+        </div>
+      </section>
+
+      <section class="chart-container">
+        <h3>Monthly Expense Trend</h3>
+        <div class="chart-box">
+          <apx-chart
+            *ngIf="expenseTrendHasData"
+            [series]="expenseTrendChartOptions.series"
+            [chart]="expenseTrendChartOptions.chart"
+            [xaxis]="$any(expenseTrendChartOptions.xaxis)"
+            [yaxis]="$any(expenseTrendChartOptions.yaxis)"
+            [stroke]="$any(expenseTrendChartOptions.stroke)"
+            [fill]="$any(expenseTrendChartOptions.fill)"
+            [colors]="$any(expenseTrendChartOptions.colors)"
+            [dataLabels]="$any(expenseTrendChartOptions.dataLabels)"
+            [tooltip]="$any(expenseTrendChartOptions.tooltip)"
+            [grid]="$any(expenseTrendChartOptions.grid)"
+          ></apx-chart>
+          <div class="chart-note" *ngIf="!expenseTrendHasData">Trend appears once there is enough expense history.</div>
+        </div>
+      </section>
+
+      <section class="chart-container">
+        <h3>Top Expense Categories</h3>
+        <div class="chart-box">
+          <apx-chart
+            *ngIf="expenseCategoryHasData"
+            [series]="expenseCategoryChartOptions.series"
+            [chart]="expenseCategoryChartOptions.chart"
+            [xaxis]="$any(expenseCategoryChartOptions.xaxis)"
+            [yaxis]="$any(expenseCategoryChartOptions.yaxis)"
+            [plotOptions]="$any(expenseCategoryChartOptions.plotOptions)"
+            [colors]="$any(expenseCategoryChartOptions.colors)"
+            [dataLabels]="$any(expenseCategoryChartOptions.dataLabels)"
+            [tooltip]="$any(expenseCategoryChartOptions.tooltip)"
+            [grid]="$any(expenseCategoryChartOptions.grid)"
+          ></apx-chart>
+          <div class="chart-note" *ngIf="!expenseCategoryHasData">Top categories will populate automatically.</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="insights-wrap" *ngIf="!loading && insights.length > 0">
+      <div class="insight-header">
+        <h3>Smart Tax Insights</h3>
+        <span>Auto-generated from your live dashboard metrics</span>
+      </div>
+      <div class="insights-grid">
+        <article
+          class="insight-card"
+          *ngFor="let insight of insights"
+          [class.info]="insight.tone === 'info'"
+          [class.warning]="insight.tone === 'warning'"
+          [class.success]="insight.tone === 'success'"
+        >
+          <h4>{{ insight.title }}</h4>
+          <p>{{ insight.message }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="recent-card" *ngIf="!loading">
+      <div class="recent-header">
+        <h3>Recent Transactions</h3>
+        <div class="recent-actions">
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Search description/category"
+            [(ngModel)]="recentSearch"
+          />
+          <button
+            class="btn btn-outline"
+            [disabled]="!recent.length || isDeletingAll"
+            (click)="onDeleteAllRecent()"
+          >
+            {{ isDeletingAll ? 'Deleting...' : 'Delete All' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="recent-table-wrap" *ngIf="(filteredRecent?.length ?? 0) > 0; else emptyRecent">
+        <table class="recent-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th class="text-right">Amount</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of filteredRecent; trackBy: trackByTx">
+              <td>{{ tx.date | date : 'MMM d, y' }}</td>
+              <td>{{ tx.description }}</td>
+              <td>{{ tx.category }}</td>
+              <td class="text-right" [ngClass]="tx.type === 'income' ? 'amt-green' : 'amt-red'">
+                <ng-container *ngIf="tx.type === 'income'">+ {{ formatCurrency(tx.amount) }}</ng-container>
+                <ng-container *ngIf="tx.type === 'expense'">- {{ formatCurrency(tx.amount) }}</ng-container>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="tx.type === 'income' ? 'badge-credit' : 'badge-debit'">
+                  {{ tx.type === 'income' ? 'Credited' : 'Debited' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-row">
+                  <button type="button" class="btn-mini" (click)="onViewRecent(tx)">View</button>
+                  <button type="button" class="btn-mini" [disabled]="!tx._id" (click)="onEditRecent(tx)">Edit</button>
+                  <button type="button" class="btn-mini danger" [disabled]="!tx._id" (click)="onDeleteRecent(tx)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #emptyRecent>
+        <div class="recent-empty">No transactions in this range. Add income or expense to populate this table.</div>
+      </ng-template>
+    </section>
+
+    <app-income-modal
+      [isOpen]="showIncome"
+      (closeModal)="closeIncome()"
+      (save)="onIncomeSave($event)"
+    ></app-income-modal>
+
+    <app-expense-modal
+      [isOpen]="showExpense"
+      (closeModal)="closeExpense()"
+      (save)="onExpenseSave($event)"
+    ></app-expense-modal>
+  </div>
+</div>

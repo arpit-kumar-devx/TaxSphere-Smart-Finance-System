@@ -1,0 +1,53 @@
+<div class="admin-layout" *ngIf="user$ | async as me">
+  <!-- Admin Nested Sidebar -->
+  <aside class="admin-sidebar shadow-premium">
+    <div class="admin-brand">
+       <div class="a-avatar">{{ me.name[0] }}</div>
+       <div class="a-info">
+          <span class="a-name">{{ me.name }}</span>
+          <span class="a-tag">System Admin</span>
+       </div>
+    </div>
+
+    <nav class="admin-nav">
+      <a routerLink="/app/admin/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="n-icon">📊</span> Analytics
+      </a>
+      <a routerLink="/app/admin/users" routerLinkActive="active" class="nav-item">
+        <span class="n-icon">👤</span> Users & Roles
+      </a>
+      <a routerLink="/app/admin/itrs" routerLinkActive="active" class="nav-item">
+        <span class="n-icon">📁</span> ITR Registry
+      </a>
+      <a routerLink="/app/admin/audit-logs" routerLinkActive="active" class="nav-item">
+        <span class="n-icon">📜</span> Audit Logs
+      </a>
+      <a routerLink="/app/admin/settings" routerLinkActive="active" class="nav-item">
+        <span class="n-icon">⚙️</span> System Settings
+      </a>
+    </nav>
+
+    <div class="admin-foot">
+       <p>Security Level: <strong>High</strong></p>
+    </div>
+  </aside>
+
+  <!-- Admin Main Content -->
+  <div class="admin-content-shell">
+    <header class="admin-header">
+       <div class="h-left">
+          <h1>Admin Control Center</h1>
+       </div>
+       <div class="h-right">
+          <app-notification-dropdown></app-notification-dropdown>
+          <div class="profile-chip">
+             <img src="https://ui-avatars.com/api/?name=Admin&background=6366f1&color=fff" alt="">
+          </div>
+       </div>
+    </header>
+
+    <main class="admin-view-port custom-scroll">
+       <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

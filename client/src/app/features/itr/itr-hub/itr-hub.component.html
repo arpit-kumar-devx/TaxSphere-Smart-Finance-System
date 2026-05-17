@@ -1,0 +1,53 @@
+<div class="itr-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Income Tax Return</p>
+      <h1>Your filings</h1>
+      <p class="sub">Prepare, upload proofs, pay filing fee, and get CA verification — all in one flow.</p>
+    </div>
+    <button type="button" class="btn-cta" (click)="startNew()">+ New ITR</button>
+  </header>
+
+  <p class="err" *ngIf="error">{{ error }}</p>
+
+  <div class="loading" *ngIf="loading">Loading your filings…</div>
+
+  <div class="grid" *ngIf="!loading">
+    <a
+      *ngFor="let it of items"
+      class="card"
+      [routerLink]="['/app/itr', it._id]">
+      <div class="card-top">
+        <span class="pill" [attr.data-st]="it.status">{{ statusLabel(it.status) }}</span>
+        <span class="yr">{{ it.assessmentYear }} · {{ it.regime }}</span>
+      </div>
+      <h3>{{ it.personalInfo.firstName || 'draft' }} {{ it.personalInfo.lastName }}</h3>
+      <p class="meta">Tax: ₹{{ it.taxSummary.finalTax | number : '1.0-0' }} · Docs: {{ it.documents.length }}</p>
+      
+      <div class="actions" *ngIf="it.status !== 'draft' && it.status !== 'payment_pending'">
+        <button 
+          type="button" 
+          class="btn-dl" 
+          (click)="downloadPdf(it._id); $event.stopPropagation()">
+          ↓ Download Summary
+        </button>
+      </div>
+      <div class="actions" *ngIf="shouldShowPay(it)">
+        <button
+          type="button"
+          class="btn-dl"
+          [routerLink]="['/app/payment', it._id]"
+          (click)="$event.stopPropagation()">
+          {{ payButtonText(it) }}
+        </button>
+      </div>
+    </a>
+
+    <div class="empty" *ngIf="(items?.length ?? 0) === 0">
+      <h3>No filings yet</h3>
+      <p>Start your first ITR in minutes.</p>
+      <button type="button" class="btn-cta outline" (click)="startNew()">Create draft</button>
+    </div>
+  </div>
+</div>
+

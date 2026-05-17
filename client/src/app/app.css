@@ -1,0 +1,30 @@
+.main-layout {
+  min-height: 100vh;
+  display: flex;
+  background: var(--background-color, #f8fafc);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  background: var(--background-color, #f8fafc);
+  color: var(--text-color, #1e293b);
+}
+
+@media (min-width: 1025px) {
+  .content {
+    margin-left: 260px;   /* sidebar width */
+    padding: 0;
+    min-height: 100vh;
+  }
+}
+
+@media (max-width: 1024px) {
+  .content {
+    margin-left: 0;
+    width: 100%;
+    min-height: 100vh;
+  }
+}

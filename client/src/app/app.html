@@ -1,0 +1,7 @@
+<div [class.app-layout]="auth.isAuthenticated()">
+  <app-sidebar *ngIf="showSidebar()"></app-sidebar>
+  <main [class.content]="auth.isAuthenticated()">
+    <router-outlet />
+  </main>
+  <app-toast-container></app-toast-container>
+</div>

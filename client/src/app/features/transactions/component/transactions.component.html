@@ -1,0 +1,199 @@
+<div class="transactions-root">
+
+<!-- ===== Main content (Transactions) ===== -->
+<div class="main">
+  <!-- Sticky top bar (title + actions) -->
+  <div class="top-bar top-bar--sticky">
+    <button type="button" class="hamburger" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+
+    <h1><strong>Transactions</strong></h1>
+
+    <div>
+      <!-- <a routerLink="/dashboard" class="btn btn-outline">Back to Dashboard</a> -->
+      <button
+        class="btn btn-danger"
+        [disabled]="isDeletingAll() || isLoading() || !transactions().length"
+        (click)="deleteAllTransactions()">
+        {{ isDeletingAll() ? 'Deleting…' : 'Delete All' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Transactions List -->
+  <section class="transactions-section">
+    <div class="section-header">
+      <h2 class="section-title">Recent Transactions</h2>
+      <div class="section-actions">
+        <span class="transaction-count">{{ transactions().length }} transactions</span>
+      </div>
+    </div>
+
+    <div class="transactions-list">
+      <!-- Filters -->
+      <form class="filters" [formGroup]="filterForm" (submit)="$event.preventDefault()">
+        <div class="filters-row">
+          <div class="field">
+            <label class="lbl">Search</label>
+            <input class="in" type="text" placeholder="Search description/category…" formControlName="search" />
+          </div>
+
+          <div class="field">
+            <label class="lbl">Type</label>
+            <select class="in" formControlName="type">
+              <option value="">All</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="lbl">Category</label>
+            <select class="in" formControlName="category">
+              <option value="">All</option>
+              <option *ngFor="let c of getFilterCategoryOptions(); trackBy: trackByCategoryId" [value]="c.name">
+                {{ c.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <div class="field">
+            <label class="lbl">From</label>
+            <input class="in" type="date" formControlName="startDate" />
+          </div>
+          <div class="field">
+            <label class="lbl">To</label>
+            <input class="in" type="date" formControlName="endDate" />
+          </div>
+          <div class="field">
+            <label class="lbl">Sort</label>
+            <div class="sortpair">
+              <select class="in" formControlName="sortBy">
+                <option value="date">Date</option>
+                <option value="amount">Amount</option>
+                <option value="createdAt">Created</option>
+              </select>
+              <select class="in" formControlName="sortDir">
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div *ngIf="isLoading()" class="loading-state">
+        <svg class="animate-spin h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p>Loading transactions...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && transactions().length === 0" class="empty-state">
+        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <h3 class="empty-title">No transactions yet</h3>
+        <p class="empty-description">Start by adding your first transaction to track your finances.</p>
+      </div>
+
+      <div *ngIf="!isLoading() && transactions().length > 0" class="recent-table-wrap desktop-only">
+        <table class="recent-table">
+          <colgroup>
+            <col style="width: 15%" />
+            <col style="width: 25%" />
+            <col style="width: 15%" />
+            <col style="width: 15%" />
+            <col style="width: 120px" />
+            <col style="width: 80px" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th class="text-right">Amount</th>
+              <th>Type</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let transaction of transactions(); trackBy: trackById">
+              <td>{{ transaction.date | date:'MMM d, y' }}</td>
+              <td>
+                <span *ngIf="transaction.description">{{ transaction.description }}</span>
+                <span *ngIf="!transaction.description" class="text-muted">--</span>
+              </td>
+              <td class="transaction-category">{{ formatCategory(transaction.category) }}</td>
+              <td class="text-right" [ngClass]="transaction.type === 'income' ? 'amt-green' : 'amt-red'">
+                {{ transaction.type === 'income' ? '+' : '-' }}₹{{ transaction.amount | number : '1.2-2' }}
+              </td>
+              <td>
+                <span class="badge" [ngClass]="transaction.type === 'income' ? 'badge-credit' : 'badge-debit'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                    <path *ngIf="transaction.type === 'income'"  d="M12 4l6 6h-4v6h-4v-6H6z"  fill="currentColor"></path>
+                    <path *ngIf="transaction.type === 'expense'" d="M12 20l-6-6h4V8h4v6h4z" fill="currentColor"></path>
+                  </svg>
+                  {{ transaction.type === 'income' ? 'Credited' : 'Debited' }}
+                </span>
+              </td>
+              <td>
+                <button
+                  class="action-button delete-button"
+                  [disabled]="isDeleting(transaction._id)"
+                  (click)="deleteTransaction(transaction._id)"
+                  title="Delete transaction">
+                  <svg *ngIf="!isDeleting(transaction._id)" class="w-4 h-4" fill="none" stroke="currentColor"
+                       viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                  <svg *ngIf="isDeleting(transaction._id)" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- /.recent-table-wrap -->
+
+      <!-- Mobile cards -->
+      <div *ngIf="!isLoading() && transactions().length > 0" class="mobile-only cards">
+        <div class="tx-card" *ngFor="let t of transactions(); trackBy: trackById">
+          <div class="tx-top">
+            <div class="tx-date">{{ t.date | date:'MMM d, y' }}</div>
+            <span class="badge" [ngClass]="t.type === 'income' ? 'badge-credit' : 'badge-debit'">
+              {{ t.type === 'income' ? 'Credited' : 'Debited' }}
+            </span>
+          </div>
+          <div class="tx-mid">
+            <div class="tx-desc">{{ t.description || '—' }}</div>
+            <div class="tx-cat">{{ formatCategory(t.category) }}</div>
+          </div>
+          <div class="tx-bot">
+            <div class="tx-amt" [ngClass]="t.type === 'income' ? 'amt-green' : 'amt-red'">
+              {{ t.type === 'income' ? '+' : '-' }}₹{{ t.amount | number : '1.2-2' }}
+            </div>
+            <button class="action-button delete-button" [disabled]="isDeleting(t._id)" (click)="deleteTransaction(t._id)">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== Budgets Modal ===== -->
+<div class="modal-shell" *ngIf="showBudget" (click)="closeBudget()" tabindex="-1">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+  </div>
+</div>
+

@@ -1,0 +1,284 @@
+<div class="cad container-fluid">
+  <!-- Enterprise Header with Context -->
+  <header class="cad-header">
+     <div class="header-group">
+        <h1 class="gradient-text">CA Command Center</h1>
+        <div class="meta-row">
+           <span class="badge online">Professional High-Availability</span>
+           <span class="time-stamp">Workday: {{ currentTime | date:'EEEE, MMM d' }}</span>
+        </div>
+     </div>
+     
+     <div class="header-actions">
+        <!-- New Primary Tab Switch -->
+        <div class="tab-switch">
+           <button [class.active]="currentTab === 'workspace'" (click)="currentTab = 'workspace'">
+             💼 Workspace
+           </button>
+           <button [class.active]="currentTab === 'profile'" (click)="currentTab = 'profile'">
+             👤 Professional Profile
+           </button>
+        </div>
+
+        <button class="btn btn-sync" (click)="reload()" [disabled]="loading">
+           <span class="icon">🔄</span> {{ loading ? 'Syncing...' : 'Sync Workspace' }}
+        </button>
+     </div>
+  </header>
+
+  <!-- WORKSPACE TAB -->
+  <div class="tab-content" *ngIf="currentTab === 'workspace'">
+      <!-- High-Level Performance Analytics -->
+      <section class="ca-stats">
+         <div class="stat-tile glass queue">
+            <div class="stat-icon-wrap">🗂️</div>
+            <div class="stat-info">
+               <label>Assigned Cases</label>
+               <strong>{{ items.length }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass queue">
+            <div class="stat-icon-wrap">📥</div>
+            <div class="stat-info">
+               <label>Pending Review</label>
+               <strong>{{ pendingCount }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass time">
+            <div class="stat-icon-wrap">📄</div>
+            <div class="stat-info">
+               <label>Documents Pending</label>
+               <strong>{{ docsPendingCount }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass success">
+            <div class="stat-icon-wrap">✅</div>
+            <div class="stat-info">
+               <label>Approved + Filed</label>
+               <strong>{{ completedCount }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass time">
+            <div class="stat-icon-wrap">⚡</div>
+            <div class="stat-info">
+               <label>Avg Turnaround</label>
+               <strong>{{ averageProcessingTime }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass earnings">
+            <div class="stat-icon-wrap">💰</div>
+            <div class="stat-info">
+               <label>Commission Earned</label>
+               <strong>₹{{ earningsThisMonth | number:'1.2-2' }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass">
+            <div class="stat-icon-wrap">⏳</div>
+            <div class="stat-info">
+               <label>Payments Pending</label>
+               <strong>{{ paymentsPendingCount }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass">
+            <div class="stat-icon-wrap">💳</div>
+            <div class="stat-info">
+               <label>Payments Completed</label>
+               <strong>{{ paymentsCompletedCount }}</strong>
+            </div>
+         </div>
+         <div class="stat-tile glass">
+            <div class="stat-icon-wrap">❌</div>
+            <div class="stat-info">
+               <label>Rejected Filings</label>
+               <strong>{{ rejectedCount }}</strong>
+            </div>
+         </div>
+      </section>
+
+      <!-- Error Toast -->
+      <div class="alert alert-danger" *ngIf="err" (click)="err = ''">
+        {{ err }}
+      </div>
+
+      <!-- View Controls -->
+      <div class="workspace-controls">
+          <div class="mode-toggle">
+             <button [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">List Audit</button>
+             <button [class.active]="viewMode === 'kanban'" (click)="viewMode = 'kanban'">Visual Tracker</button>
+          </div>
+          <div class="search-wrap">
+             <span class="search-icon">🔍</span>
+             <input type="text" placeholder="Search taxpayers, ITR ID, or stage...">
+          </div>
+      </div>
+
+      <!-- Processing Area -->
+      <div class="workspace-area">
+        
+        <!-- LIST VIEW -->
+        <div class="processing-view glass-panel" *ngIf="viewMode === 'list'">
+           <section class="main-panel">
+              <div class="table-wrap">
+                 <table class="ca-table">
+                    <thead>
+                       <tr>
+                          <th>Taxpayer Identity</th>
+                          <th>Period</th>
+                          <th>Last Activity</th>
+                          <th>Stage</th>
+                       </tr>
+                    </thead>
+                    <tbody>
+                       <tr *ngFor="let it of items" (click)="open(it)" [class.active]="selected?._id === it._id">
+                          <td>
+                            <div class="client-cell">
+                               <div class="p-avatar">{{ taxpayerName(it)[0] }}</div>
+                               <div class="client-info-cell">
+                                  <span class="client-name">{{ taxpayerName(it) }}</span>
+                                  <span class="client-id">ID: {{ it._id.substring(it._id.length-6) }}</span>
+                               </div>
+                            </div>
+                          </td>
+                          <td class="semi-bold">AY {{ it.assessmentYear }}</td>
+                          <td>{{ it.updatedAt | date:'mediumDate' }}</td>
+                          <td>
+                             <span class="status-badge" [ngClass]="'status-' + it.status">
+                                {{ it.status.replace('_', ' ') }}
+                             </span>
+                          </td>
+                       </tr>
+                    </tbody>
+                 </table>
+              </div>
+           </section>
+
+           <!-- Contextual Audit Panel -->
+           <aside class="detail-panel glass-dark" *ngIf="selected">
+              <div class="panel-header-alt">
+                 <h3>Audit Context: #{{ selected._id.substring(selected._id.length-6) }}</h3>
+                 <button class="btn-icon-close" (click)="closeDetail()">✕</button>
+              </div>
+
+              <div class="audit-timeline">
+                 <div class="timeline-step">
+                    <div class="step-point done"></div>
+                    <div class="step-data">
+                       <p>ITR Request Initiated</p>
+                       <small>{{ selected.createdAt | date:'MMM d, y' }}</small>
+                    </div>
+                 </div>
+                 <div class="timeline-step" [class.active]="['assigned', 'under_review'].includes(selected.status)">
+                    <div class="step-point" [class.current]="['assigned', 'under_review'].includes(selected.status)"></div>
+                    <div class="step-data">
+                       <p>Professional Compliance Review</p>
+                       <small>{{ selected.status.replace('_', ' ') }}</small>
+                    </div>
+                 </div>
+              </div>
+
+              <!-- Doc Verification -->
+              <div class="audit-docs-area" *ngIf="selected.documents?.length">
+                 <label class="section-tag">Document Set Verification</label>
+                 <div class="doc-list">
+                    <div class="doc-card glass-light" *ngFor="let doc of selected.documents">
+                       <div class="doc-meta">
+                          <span class="doc-name">{{ doc.type.replace('_', ' ') }}</span>
+                          <span class="doc-stat" [ngClass]="doc.status">{{ doc.status || 'pending' }}</span>
+                       </div>
+                       <div class="doc-actions">
+                          <a [href]="doc.fileUrl" target="_blank" class="btn-view-doc">👁️ View</a>
+                          <div class="review-btns">
+                             <button (click)="reviewDoc(doc._id, 'verified')" [disabled]="busy || doc.status==='verified'" class="btn-verify">✓</button>
+                             <button (click)="reviewDoc(doc._id, 'rejected')" [disabled]="busy || doc.status==='rejected'" class="btn-reject">✗</button>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div class="action-section">
+                 <div class="remarks-wrap">
+                    <label>Payment Snapshot</label>
+                    <div class="ca-textarea">
+                      Status: {{ getPaymentStatus(selected).replace('_', ' ') }} |
+                      Amount: ₹{{ ((selected.paymentAmount || selected.payment?.amount || 0)/100) | number:'1.2-2' }} |
+                      Paid At: {{ getPaidAt(selected) ? (getPaidAt(selected) | date:'medium') : 'N/A' }} |
+                      Txn: {{ selected.paymentId || selected.payment?.paymentId || 'N/A' }}
+                    </div>
+                 </div>
+                 <label>Compliance Decision</label>
+                 <div class="status-selector">
+                    <select class="ca-select" [(ngModel)]="nextStatus">
+                       <option value="under_review">🔬 Move to Under Review</option>
+                       <option value="approved">✅ Approve & Release for Payment</option>
+                       <option value="rejected">❌ Reject Filing</option>
+                       <option value="filed">📦 Mark as Filed with Govt</option>
+                    </select>
+                 </div>
+
+                 <div class="remarks-wrap">
+                    <label>Audit Remarks (Taxpayer Note)</label>
+                    <textarea class="ca-textarea" rows="3" [(ngModel)]="remarks" placeholder="Provide professional remarks or reasons for rejection..."></textarea>
+                 </div>
+
+                 <button class="btn btn-primary-ca" (click)="setItrStatus()" [disabled]="busy || (nextStatus === 'filed' && getPaymentStatus(selected) !== 'paid')">
+                    {{ busy ? 'Syncing Status...' : 'Submit Decision' }}
+                 </button>
+              </div>
+           </aside>
+        </div>
+
+        <!-- Visual Tracker (Kanban) -->
+        <div class="kanban-view" *ngIf="viewMode === 'kanban'">
+           <app-ca-kanban [items]="items" (statusChange)="onKanbanMove($event)"></app-ca-kanban>
+        </div>
+      </div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div class="tab-content" *ngIf="currentTab === 'profile'">
+      <section class="profile-editor glass-panel">
+          <div class="profile-header">
+             <div class="prof-avatar-lg">
+                <span class="initial">CA</span>
+                <button class="btn-camera">📸</button>
+             </div>
+             <div class="prof-title">
+                <h2>Professional Member Profile</h2>
+                <p>Maintain your professional credentials and specialization areas.</p>
+             </div>
+          </div>
+
+          <div class="profile-form-grid">
+             <div class="input-block">
+                <label>Professional Qualification</label>
+                <input type="text" [(ngModel)]="caProfile.qualification" placeholder="e.g. Chartered Accountant, CPA">
+             </div>
+             <div class="input-block">
+                <label>Core Specialization</label>
+                <select [(ngModel)]="caProfile.specialization">
+                   <option value="Income Tax">Income Tax (Individual/Corporate)</option>
+                   <option value="GST/Indirect Tax">GST & Indirect Taxation</option>
+                   <option value="Audit & Verification">Statutory Audit</option>
+                   <option value="International Tax">International Taxation</option>
+                 </select>
+             </div>
+             <div class="input-block">
+                <label>Years of Experience</label>
+                <input type="number" [(ngModel)]="caProfile.experience">
+             </div>
+             <div class="input-block full">
+                <label>Professional Bio (Profile Summary)</label>
+                <textarea rows="4" [(ngModel)]="caProfile.bio" placeholder="Briefly describe your expertise..."></textarea>
+             </div>
+          </div>
+
+          <div class="form-footer">
+             <div class="save-status" *ngIf="savingProfile">🚀 Synchronizing Profile...</div>
+             <button class="btn btn-primary-ca" (click)="saveProfile()" [disabled]="savingProfile">
+                {{ savingProfile ? 'Saving...' : 'Secure & Update Profile' }}
+             </button>
+          </div>
+      </section>
+  </div>
+</div>

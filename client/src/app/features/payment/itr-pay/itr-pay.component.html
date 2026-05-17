@@ -1,0 +1,79 @@
+<div class="pay-wrap" *ngIf="itr">
+  <div class="card box-glass">
+    <div class="test-badge" *ngIf="isTestMode">
+       <span class="pulse"></span>
+       TEST MODE
+    </div>
+    <div class="brand">
+       <div class="brand-ic">₹</div>
+       <h1>Secure Checkout</h1>
+    </div>
+    
+    <p class="sub">ITR Filing Fee • Assessment Year <strong>{{ itr.assessmentYear }}</strong></p>
+    
+    <div class="warn-box" *ngIf="!canPay && paymentStatus !== 'paid'">
+       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+       <span>This filing does not require payment at this stage.</span>
+    </div>
+    <div class="warn-box" *ngIf="paymentStatus === 'paid' || filingStatus === 'payment_completed' || filingStatus === 'filed'">
+       <span>Payment completed successfully.</span>
+    </div>
+    <div class="err-box" *ngIf="failureReason">
+       Last failure reason: {{ failureReason }}
+    </div>
+
+    <div class="err-box" *ngIf="err">
+       {{ err }}
+    </div>
+
+    <div class="summary">
+       <div class="sum-row">
+          <span>Filing Fee</span>
+          <span>₹{{ ((breakdown?.filingFee || 0)/100) | number:'1.2-2' }}</span>
+       </div>
+       <div class="sum-row">
+          <span>CA Service Fee</span>
+          <span>₹{{ ((breakdown?.caServiceFee || 0)/100) | number:'1.2-2' }}</span>
+       </div>
+       <div class="sum-row">
+          <span>Platform Fee</span>
+          <span>₹{{ ((breakdown?.platformFee || 0)/100) | number:'1.2-2' }}</span>
+       </div>
+       <div class="sum-row">
+          <span>GST</span>
+          <span>₹{{ ((breakdown?.totalGst || 0)/100) | number:'1.2-2' }}</span>
+       </div>
+       <hr>
+       <div class="sum-total">
+          <span>Total Amount</span>
+          <span>₹{{ (amount/100) | number:'1.2-2' }}</span>
+       </div>
+    </div>
+
+    <ul class="benefits">
+       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Expert CA Review Included</li>
+       <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Faster Processing (24h)</li>
+    </ul>
+
+    <button *ngIf="canPay" type="button" class="pay-btn btn-glow" (click)="pay()" [disabled]="busy">
+       <span *ngIf="!busy">{{ payButtonText }}</span>
+       <span *ngIf="busy" class="loader"></span>
+    </button>
+    <div class="summary" *ngIf="paymentStatus === 'paid' || filingStatus === 'payment_completed' || filingStatus === 'filed'">
+      <div class="sum-row"><span>Payment Status</span><span>Paid</span></div>
+      <div class="sum-row"><span>Razorpay Payment ID</span><span>{{ itr?.paymentId || itr?.payment?.paymentId || '-' }}</span></div>
+      <div class="sum-row"><span>Actions</span><span>
+        <button type="button" class="btn-inline" (click)="downloadReceipt()">Download Receipt</button>
+        <button type="button" class="btn-inline" (click)="downloadInvoice()">Download Invoice</button>
+      </span></div>
+    </div>
+
+    <div class="footer-links">
+       <a [routerLink]="['/app/itr', itrId]" class="back-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Return to ITR Wizard
+       </a>
+    </div>
+  </div>
+</div>
+

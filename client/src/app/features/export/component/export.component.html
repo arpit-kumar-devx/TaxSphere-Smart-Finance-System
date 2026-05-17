@@ -1,0 +1,55 @@
+<!-- Main -->
+<div class="main">
+  <!-- Top bar (sticky) -->
+  <div class="top-bar">
+    <button type="button" class="hamburger" aria-label="Open menu" (click)="layout.toggleSidebar()">☰</button>
+    <h1><strong>Report Preview</strong></h1>
+    <div></div>
+  </div>
+
+  <!-- Keep the original close button (top-right) -->
+  <button
+    type="button"
+    aria-label="Close"
+    (click)="onClose()"
+    title="Close"
+    class="close-x">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M6 6l12 12M18 6L6 18" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div class="page">
+    <section class="card">
+      <div class="toolbar">
+        <button class="btn" (click)="print()" [disabled]="!previewable || loading">Print</button>
+        <button class="btn btn-primary" (click)="download()" [disabled]="loading">Download</button>
+      </div>
+
+      <div class="preview" *ngIf="!loading && previewable && previewUrl">
+        <iframe [src]="previewUrl" title="report preview"></iframe>
+      </div>
+
+      <div class="preview placeholder" *ngIf="!loading && !previewable">
+        <div class="empty-icon">📄</div>
+        <div class="empty-text">
+          Select a report to preview<br/>
+          <small>Generated reports will appear here for review before downloading</small><br/>
+          <small>(CSV/XLSX don’t support inline preview – use Download)</small>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">Building preview…</div>
+      <p class="error" *ngIf="errorMsg">{{ errorMsg }}</p>
+    </section>
+  </div>
+
+  <!-- Budget Modal -->
+  <div class="modal-backdrop" *ngIf="showBudget" (click)="closeBudget()"></div>
+  <div class="modal-shell" *ngIf="showBudget" (click)="closeBudget()" tabindex="-1">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      
+    </div>
+  </div>
+</div>
+
