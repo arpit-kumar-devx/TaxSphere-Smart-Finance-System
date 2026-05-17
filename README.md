@@ -4,10 +4,10 @@ TaxSphere is a modern Smart Finance & Tax Intelligence Platform developed using 
 
 The platform is designed for:
 
-Freelancers
-Self-employed professionals
-Small businesses
-Financial consultants
+## Freelancers
+## Self-employed professionals
+## Small businesses
+## Financial consultants
 
 TaxSphere helps users efficiently manage:
 
